@@ -5,13 +5,13 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class tictactoe extends JFrame implements ActionListener{
-    private JButton[][] buttons;
-    private int size;
-    private int len;
-    private int count;
-    private boolean playerXTurn = true;
-    private String winner = null;
-    private int windowsize = 900;
+    public JButton[][] buttons;
+    public int size;
+    public int len;
+    public int count;
+    public boolean playerXTurn = true;
+    public String winner = null;
+    public int windowsize = 900;
     public String Player1;
     public String Player2;
 

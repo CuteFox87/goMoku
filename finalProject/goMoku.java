@@ -10,7 +10,7 @@ public class goMoku extends tictactoe{
         super(15, 5, "O", "X");
         setTitle("Go Moku");
 
-        background = new ImageIcon("c:\\Users\\D1248959\\Documents\\java\\background.png").getImage();
+        background = new ImageIcon(".\\background\\background.png").getImage();
 
         JPanel customPane = new JPanel(){
             @Override

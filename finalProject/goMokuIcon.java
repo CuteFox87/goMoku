@@ -1,0 +1,3 @@
+class goMokuIcon extend goMoku{
+    
+}
