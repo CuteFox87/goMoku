@@ -6,14 +6,25 @@ class tictactoeIcon extends tictactoe{
 
     private ImageIcon Player1icon;
     private ImageIcon Player2icon;
-    public String Player1 = "X";
-    public String Player2 = "O";
+    public String Player1;
+    public String Player2;
 
-    public tictactoeIcon(int size, int len , ImageIcon Player1, ImageIcon Player2){
+    public tictactoeIcon(){
+        this(3, 3);
+    }
+
+    public tictactoeIcon(int size, int len){
+        this(size, len, new ImageIcon(".\\chess\\black_chess.png"), new ImageIcon(".\\chess\\white_chess.png"), "X", "O");
+    }
+
+    public tictactoeIcon(int size, int len , ImageIcon Player1, ImageIcon Player2, String Player1name, String Player2name){
         this.size = size;
         this.len = len;
         this.Player1icon = new ImageIcon(Player1.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH));
         this.Player2icon = new ImageIcon(Player2.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH));
+        this.Player1 = Player1name;
+        this.Player2 = Player2name;
+
 
         buttons = new JButton[size][size];
         setTitle("Tic Tac Toe");
@@ -47,8 +58,6 @@ class tictactoeIcon extends tictactoe{
                 add(buttons[i][j]);
             }
         }
-        revalidate();
-        repaint();
     }
 
     public void actionPerformed(ActionEvent e){
@@ -59,10 +68,12 @@ class tictactoeIcon extends tictactoe{
 
         if(playerXTurn){
             //button.setText(Player1);
+            Player1icon = new ImageIcon(Player1icon.getImage().getScaledInstance(button.getWidth()*3/5, button.getHeight()*3/5, Image.SCALE_SMOOTH));
             button.setIcon(Player1icon);
             button.putClientProperty("Player", "1");
         }else{
             // button.setText(Player2);
+            Player2icon = new ImageIcon(Player2icon.getImage().getScaledInstance(button.getWidth()*3/5, button.getHeight()*3/5, Image.SCALE_SMOOTH));
             button.setIcon(Player2icon);
             button.putClientProperty("Player", "2");
         }
@@ -136,7 +147,7 @@ class tictactoeIcon extends tictactoe{
     public static void main(String[] args){
         ImageIcon Player1 = new ImageIcon(".\\chess\\black_chess.png");
         ImageIcon Player2 = new ImageIcon(".\\chess\\white_chess.png");
-        new tictactoeIcon(3, 3, Player1, Player2);
+        new tictactoeIcon(3, 3, Player1, Player2, "Black", "White");
     }
 
 
