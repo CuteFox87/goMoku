@@ -21,7 +21,7 @@ def generate_gomoku_background(image_size=750, line_color=(0, 0, 0), board_color
         draw.line([(j, 0), (j, 750)], fill=line_color, width=2)
 
     # Save the image
-    image.save("background.png")
+    image.save(".\\background\\background.png")
     print("Go-Moku background saved as 'background.png'.")
 
 # Generate the Go-Moku background
