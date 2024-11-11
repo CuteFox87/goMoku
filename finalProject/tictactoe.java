@@ -11,7 +11,7 @@ public class tictactoe extends JFrame implements ActionListener{
     public int count;
     public boolean playerXTurn = true;
     public String winner = null;
-    public int windowsize = 900;
+    public int windowsize = 750;
     public String Player1;
     public String Player2;
 
