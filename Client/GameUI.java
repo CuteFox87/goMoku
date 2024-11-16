@@ -4,15 +4,23 @@ import javax.swing.*;
 import java.awt.*;
 
 public class GameUI {
-    JFrame loginJF = new JFrame();
-    JPanel loginBar = new JPanel();
-    JPanel loginPic = new JPanel();
+    JFrame loginJF;
+    JPanel loginBar;
+    JPanel loginPic;
 
-    JFrame gameJF = new JFrame();
-    JPanel gameBar = new JPanel();
-    JPanel gamePic = new JPanel();
-    
+    JFrame gameJF;
+    JPanel gameBar;
+    JPanel gamePic;
+
+    ClientGameHandle clientGameHandle = new ClientGameHandle();
+    GameListener gameListener;
+
     public void initLoginUI() {
+
+        loginJF = new JFrame();
+        loginBar = new JPanel();
+        loginPic = new JPanel();
+
         loginJF.setTitle("Go Moku Login");
         loginJF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         loginJF.setLayout(new BorderLayout());
@@ -26,6 +34,11 @@ public class GameUI {
         JLabel nameInLa = new JLabel("Account");
         JTextField nameIn = new JTextField(10);
         JButton jButton = new JButton("Login");
+
+        gameListener = new GameListener();
+        gameListener.nameIn = nameIn;
+        gameListener.gameUI = this;
+        gameListener.clientGameHandle = clientGameHandle;
         
         loginBar.add(nameInLa);
         loginBar.add(nameIn);
@@ -36,43 +49,44 @@ public class GameUI {
         loginJF.add(loginPic, BorderLayout.CENTER);
         loginJF.add(loginBar, BorderLayout.EAST);
 
-        jButton.addActionListener(e -> {
-            String name = nameIn.getText();
-            hideLoginUI();
-            showGameUI();
-        });
+        jButton.setActionCommand("login");
+        jButton.addActionListener(gameListener);
 
+        nameIn.setActionCommand("login");
+        nameIn.addActionListener(gameListener);
+
+        loginJF.setVisible(false);
     }
 
     public void initGameUI() {
-        JFrame gameJF = new JFrame();
-        gameJF.setTitle("Go Moku");
+
+        gameJF = new JFrame();
+        gameBar = new JPanel();
+        gamePic = new JPanel();
+
+        gameJF.setTitle("Go Moku Game");
         gameJF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         gameJF.setLayout(new BorderLayout());
-        gameJF.setSize(900, 900);
+        gameJF.setSize(700, 700);
         gameJF.setLocationRelativeTo(null);
 
-        JPanel jp1 = new JPanel();
-        JPanel jp2 = new JPanel();
-        jp1.setBackground(Color.white);
-        jp2.setPreferredSize(new Dimension(120, 0));
-        jp2.setBackground(Color.darkGray);
+        gamePic.setBackground(Color.white);
+        gameBar.setPreferredSize(new Dimension(120, 0));
+        gameBar.setBackground(Color.GRAY);
+        
+        JLabel nameLa = new JLabel("Welcome " + clientGameHandle.username +"!");
+        JButton jButton = new JButton("Logout");
 
-        gameJF.add(jp1, BorderLayout.CENTER);
-        gameJF.add(jp2, BorderLayout.EAST);
+        gameBar.add(nameLa);
+        gameBar.add(jButton);
 
-        String[] strs = {"Start Game", "Player vs Player", "Player vs AI", "Undo", "Exit"};
+        gamePic.add(new JLabel(new ImageIcon(".\\src\\game.png")));
 
-        JButton bt1 = new JButton(strs[0]);
-        jp2.add(bt1);
+        gameJF.add(gamePic, BorderLayout.CENTER);
+        gameJF.add(gameBar, BorderLayout.EAST);
 
-        ButtonGroup group = new ButtonGroup();
-        JRadioButton jRadioButton1 = new JRadioButton(strs[1], true);
-        JRadioButton jRadioButton2 = new JRadioButton(strs[2], false);
-        group.add(jRadioButton1);
-        group.add(jRadioButton2);
-        jp2.add(jRadioButton1);
-        jp2.add(jRadioButton2);
+        jButton.setActionCommand("logout");
+        jButton.addActionListener(gameListener);
 
         gameJF.setVisible(false);
     }
@@ -96,6 +110,8 @@ public class GameUI {
     public static void main(String[] args) {
         GameUI gameUI = new GameUI();
         gameUI.initLoginUI();
-        gameUI.loginJF.setVisible(true);
+        gameUI.showLoginUI();
     }
+
+
 }
