@@ -28,10 +28,25 @@ public class GameListener extends MouseAdapter implements ActionListener {
                 gameUI.showGameUI();
                 gameUI.hideLoginUI();
             }
-            case "logout" -> {
+            case "Logout" -> {
                 clientGameHandle.username = null;
                 gameUI.showLoginUI();
                 gameUI.hideGameUI();
+            }
+            case "Local PVP" -> {
+                clientGameHandle.Online = 0;
+                clientGameHandle.AImode = 0;
+                clientGameHandle.GameStart();
+            }
+            case "Local PVE" -> {
+                clientGameHandle.Online = 0;
+                clientGameHandle.AImode = 1;
+                clientGameHandle.GameStart();
+            }
+            case "Online PVP" -> {
+                clientGameHandle.Online = 1;
+                clientGameHandle.AImode = 0;
+                clientGameHandle.GameStart();
             }
             
         }

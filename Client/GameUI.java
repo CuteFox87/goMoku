@@ -70,23 +70,34 @@ public class GameUI {
         gameJF.setSize(700, 700);
         gameJF.setLocationRelativeTo(null);
 
-        gamePic.setBackground(Color.white);
         gameBar.setPreferredSize(new Dimension(120, 0));
         gameBar.setBackground(Color.GRAY);
+        gamePic.setBackground(Color.white);
+        
         
         JLabel nameLa = new JLabel("Welcome " + clientGameHandle.username +"!");
-        JButton jButton = new JButton("Logout");
-
         gameBar.add(nameLa);
-        gameBar.add(jButton);
 
+        String[] strs = {"Local PVP", "Local PVE", "Online PVP", "Undo", "Quit"};
+
+        for(String str: strs){
+            JButton bt = new JButton(str);
+            gameBar.add(bt);
+            bt.setActionCommand(str);
+            bt.addActionListener(gameListener);
+        }
+
+        JButton logout = new JButton("Logout");
+        logout.setActionCommand("Logout");
+        logout.addActionListener(gameListener);
+        
+        gameBar.add(logout, BorderLayout.SOUTH);
+        
         gamePic.add(new JLabel(new ImageIcon(".\\src\\game.png")));
-
+        
         gameJF.add(gamePic, BorderLayout.CENTER);
         gameJF.add(gameBar, BorderLayout.EAST);
-
-        jButton.setActionCommand("logout");
-        jButton.addActionListener(gameListener);
+        
 
         gameJF.setVisible(false);
     }
