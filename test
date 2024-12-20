@@ -1,0 +1,2 @@
+javac -cp .:goMoku/json-20240303.jar goMoku/ChessServer.java
+java -cp .:goMoku/json-20240303.jar goMoku/ChessServerjava
