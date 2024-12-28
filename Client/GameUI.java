@@ -2,6 +2,7 @@ package Client;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 public class GameUI {
     JFrame loginJF;
@@ -10,10 +11,13 @@ public class GameUI {
 
     JFrame gameJF;
     JPanel gameBar;
-    JPanel gamePic;
+    goMokuIconPanel gameBoard;
 
     ClientGameHandle clientGameHandle = new ClientGameHandle();
     GameListener gameListener;
+
+    ArrayList<JButton> gameModeButtons = new ArrayList<>();
+    ArrayList<JButton> gameControlButtons = new ArrayList<>();
 
     public void initLoginUI() {
 
@@ -24,7 +28,7 @@ public class GameUI {
         loginJF.setTitle("Go Moku Login");
         loginJF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         loginJF.setLayout(new BorderLayout());
-        loginJF.setSize(700, 700);
+        loginJF.setSize(820, 700);
         loginJF.setLocationRelativeTo(null);
 
         loginPic.setBackground(Color.white);
@@ -59,43 +63,51 @@ public class GameUI {
     }
 
     public void initGameUI() {
-
         gameJF = new JFrame();
         gameBar = new JPanel();
-        gamePic = new JPanel();
+        gameBoard = new goMokuIconPanel();
 
         gameJF.setTitle("Go Moku Game");
         gameJF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         gameJF.setLayout(new BorderLayout());
-        gameJF.setSize(700, 700);
+        gameJF.setSize(830, 700);
         gameJF.setLocationRelativeTo(null);
 
         gameBar.setPreferredSize(new Dimension(120, 0));
         gameBar.setBackground(Color.GRAY);
-        gamePic.setBackground(Color.white);
-        
-        
-        JLabel nameLa = new JLabel("Welcome " + clientGameHandle.username +"!");
+
+        JLabel nameLa = new JLabel("Welcome " + clientGameHandle.username + "!");
         gameBar.add(nameLa);
 
         String[] strs = {"Local PVP", "Local PVE", "Online PVP", "Undo", "Quit"};
 
-        for(String str: strs){
+        for (String str : strs) {
             JButton bt = new JButton(str);
             gameBar.add(bt);
             bt.setActionCommand(str);
             bt.addActionListener(gameListener);
+            
+            // Store only game mode buttons
+            if (str.equals("Local PVP") || str.equals("Local PVE") || str.equals("Online PVP")) {
+                gameModeButtons.add(bt);
+            }
+
+            // Store only game control buttons
+            if (str.equals("Undo") || str.equals("Quit")) {
+                gameControlButtons.add(bt);
+                bt.setVisible(false);
+            }
         }
 
         JButton logout = new JButton("Logout");
         logout.setActionCommand("Logout");
         logout.addActionListener(gameListener);
-        
+
+        gameModeButtons.add(logout);
+
         gameBar.add(logout, BorderLayout.SOUTH);
-        
-        gamePic.add(new JLabel(new ImageIcon(".\\src\\game.png")));
-        
-        gameJF.add(gamePic, BorderLayout.CENTER);
+
+        gameJF.add(gameBoard, BorderLayout.CENTER);
         gameJF.add(gameBar, BorderLayout.EAST);
         
 

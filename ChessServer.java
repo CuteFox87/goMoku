@@ -5,9 +5,7 @@ import java.util.*;
 
 public class ChessServer {
 	private static ServerSocket serverSocket;
-    private static final List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
-    private static int player_number = 0;
-    
+    private static final List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());    
 
     public static void main(String[] args) {
         try {
@@ -34,27 +32,25 @@ public class ChessServer {
             }
 
             try {
-                player_number = clients.size();
-                if ( player_number == 0 ) {
+                if ( clients.size() == 0 ) {
                     Socket player1 = serverSocket.accept();
                     ClientHandler clientHandler1 = new ClientHandler(player1, clients);
                     clients.add(clientHandler1);
                     int hash1 = clientHandler1.hashCode();
-                    System.out.println("Player 1 connected. (" + hash1 + ")");
+                    System.out.println("Player " + clients.size() +" connected. (" + hash1 + ")");
                     new Thread(clientHandler1).start();
-                    player_number = 1;
                 }
                 else {
                     Socket player2 = serverSocket.accept();
                     ClientHandler clientHandler2 = new ClientHandler(player2, clients);
                     clients.add(clientHandler2);
                     int hash2 = clientHandler2.hashCode();
-                    System.out.println("Player 2 connected. (" + hash2 + ")");
+                    System.out.println("Player " + clients.size() +" connected. (" + hash2 + ")");
                     new Thread(clientHandler2).start();
-                    player_number = 0;
                 }
 
             } catch (IOException e) {
+                System.out.println("Error accepting player connection.");
                 e.printStackTrace();
             }
         }
@@ -72,10 +68,9 @@ class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-        try (
+        try {
             InputStream in = clientSocket.getInputStream();
             // OutputStream out = clientSocket.getOutputStream();
-        ) {
             int data;
             StringBuilder messageBuffer = new StringBuilder();
 
@@ -104,6 +99,8 @@ class ClientHandler implements Runnable {
             clients.remove(this);
             clients.forEach(client -> System.out.println(client.hashCode() + " is still connected."));
         } catch (IOException e) {
+            System.out.println("Error handling client.");
+            clients.remove(this);
             e.printStackTrace();
         }
     }
