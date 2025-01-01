@@ -38,14 +38,18 @@ GoMoku is a classic board game also known as Five in a Row. The objective of the
     ```sh
     cd goMoku
     ```
-3. Compile the project:
+3. Compile and Run the Server:
     ```sh
+    javac ChessServer.java
+    java ChessServer
+    ```
+3. Compile and Run the Client:
+    ```sh
+    cd Client
     javac -d bin *.java
+    java -cp bin Client/GameUI
     ```
-4. Run the game:
-    ```sh
-    java -cp bin Main
-    ```
+4. Enjoy your goMoku Time
 
 ## How to Play
 
@@ -55,12 +59,12 @@ GoMoku is a classic board game also known as Five in a Row. The objective of the
 
 ## Contributing
 
-Contributions are welcome! Please fork the repository and submit a pull request.
+~~Contributions are welcome! Please fork the repository and submit a pull request.~~
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+~~This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.~~
 
 ## Contact
 
-For any questions or suggestions, please open an issue or contact the project maintainer at your.email@example.com.
+For any questions or suggestions, please open an issue or contact the project maintainer at leo945394dj6@gmail.com.

@@ -3,7 +3,6 @@ package Client;
 import javax.swing.*;
 import javax.sound.sampled.*;
 import java.io.*;
-import java.awt.*;
 import java.awt.event.*;
 
 public class GameListener extends MouseAdapter implements ActionListener {
