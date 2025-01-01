@@ -1,9 +1,17 @@
 package Client;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.io.*;
 
 public class goMokuIconPanel extends JPanel implements ActionListener{
 	
@@ -19,6 +27,8 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
     public ImageIcon Player2Icon;
     private Image background;
     public GameMode currentGameMode;
+    private Stack<int[]> moves = new Stack<>();
+    AIChess ai;
 
     public goMokuIconPanel() {
         this(15);
@@ -33,8 +43,8 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
         this.len = len;
         this.Player1 = "Black";
         this.Player2 = "White";
-        this.Player1Icon = new ImageIcon(".\\chess\\black_chess.png");
-        this.Player2Icon = new ImageIcon(".\\chess\\white_chess.png");
+        this.Player1Icon = new ImageIcon(".\\src\\chess\\black_chess.png");
+        this.Player2Icon = new ImageIcon(".\\src\\chess\\white_chess.png");
 
         background = new ImageIcon(".\\src\\chessboard.png").getImage();
 
@@ -56,7 +66,7 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 buttons[i][j] = new JButton();
-                buttons[i][j].setFont(new Font("Arial", Font.PLAIN, Math.min(750 / size, 750 / size) / 3));
+                buttons[i][j].setFont(new Font("Arial", Font.PLAIN, 0));
                 buttons[i][j].addActionListener(this);
 
                 if (visible == 0) {
@@ -70,14 +80,6 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
         }
     }
 
-    public void clearButtons() {
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                buttons[i][j].setIcon(null);
-            }
-        }
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -85,51 +87,270 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
     }
 
     @Override
-public void actionPerformed(ActionEvent e) {
-    JButton button = (JButton) e.getSource();
-    if (button.getIcon() != null || winner != null) {
-        return;
-    }
-    if (currentGameMode == null) {
-        currentGameMode = GameMode.LOCAL_PVP;
+    public void actionPerformed(ActionEvent e) {
+
+        playchess();
+
+        JButton button = (JButton) e.getSource();
+        if (button.getIcon() != null || winner != null) {
+            return;
+        }
+        if (currentGameMode == null) {
+            currentGameMode = GameMode.LOCAL_PVP;
+        }
+
+        for (int i = 0; i < buttons.length; i++) {
+            for (int j = 0; j < buttons[i].length; j++) {
+                if (button == buttons[i][j]) {
+                    moves.push(new int[]{i, j});
+                }
+            }
+        }
+
+        switch (currentGameMode) {
+            case LOCAL_PVP -> handleLocalPVP(button);
+            case LOCAL_PVE -> handleLocalPVE(button);
+            case ONLINE_PVP -> handleOnlinePVP(button);
+        }
+
+        count++;
     }
 
-    switch (currentGameMode) {
-        case LOCAL_PVP -> handleLocalPVP(button);
-        case LOCAL_PVE -> handleLocalPVE(button);
-        case ONLINE_PVP -> handleOnlinePVP(button);
+    private void playchess() {
+        try {
+            File sound = new File("src\\sound\\chess.wav");
+            AudioInputStream ais = AudioSystem.getAudioInputStream(sound);
+            Clip clip = AudioSystem.getClip();
+            clip.open(ais);
+            clip.start();
+
+            Thread.sleep(clip.getMicrosecondLength() / 100000);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    count++;
-}
+    private void handleLocalPVP(JButton button) {
+        if (playerXTurn) {
+            button.setIcon(new ImageIcon(Player1Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
+            button.setText("X");
+            if (checkWin()) {
+                winner = Player1;
+                JOptionPane.showMessageDialog(this, winner + " wins!");
+            } else if (checkTie()) {
+                JOptionPane.showMessageDialog(this, "It's a tie!");
+            }
 
-private void handleLocalPVP(JButton button) {
-    if (playerXTurn) {
+            playerXTurn = !playerXTurn;
+
+        } else {
+            button.setIcon(new ImageIcon(Player2Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
+            button.setText("O");
+            if (checkWin()) {
+                winner = Player2;
+                JOptionPane.showMessageDialog(this, winner + " wins!");
+                
+            } else if (checkTie()) {
+                JOptionPane.showMessageDialog(this, "It's a tie!");
+            }
+
+            playerXTurn = !playerXTurn;
+        }
+    }
+
+    private void handleLocalPVE(JButton button) {
         button.setIcon(new ImageIcon(Player1Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
-    } else {
-        button.setIcon(new ImageIcon(Player2Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
+        button.setText("X");
+
+        if (checkWin()) {
+            winner = Player1;
+            JOptionPane.showMessageDialog(this, winner + " wins!");
+        } else if (checkTie()) {
+            JOptionPane.showMessageDialog(this, "It's a tie!");
+        }else {
+
+            ai = new Client.AIChess("2", "1");
+
+            int[][] gameBoard = new int[size][size];
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < size; j++) {
+                if (buttons[i][j].getText().equals("X")) {
+                    gameBoard[i][j] = 1;
+                } else if (buttons[i][j].getText().equals("O")) {
+                    gameBoard[i][j] = 2;
+                } else {
+                    gameBoard[i][j] = 0;
+                }
+                }
+            }
+            int[] res = ai.playAI(gameBoard);
+            buttons[res[0]][res[1]].setIcon(new ImageIcon(Player2Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
+            buttons[res[0]][res[1]].setText("O");
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            playchess();
+
+            moves.push(new int[]{res[0], res[1]});
+            
+            if (checkWin()) {
+                winner = "AI";
+                JOptionPane.showMessageDialog(this, winner + " wins!");
+            } else if (checkTie()) {
+                JOptionPane.showMessageDialog(this, "It's a tie!");
+            }
+        
+        }
+        
     }
 
-    playerXTurn = !playerXTurn;
-}
+    private void handleOnlinePVP(JButton button) {
+        // Add networking logic for online gameplay here
+        if (playerXTurn) {
+            button.setIcon(new ImageIcon(Player1Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
+            // Send move to server or opponent
+        } else {
+            button.setIcon(new ImageIcon(Player2Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
+            // Handle move received from server or opponent
+        }
 
-private void handleLocalPVE(JButton button) {
-    button.setIcon(new ImageIcon(Player1Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
-    // Add AI logic here for the opponent's move
-}
-
-private void handleOnlinePVP(JButton button) {
-    // Add networking logic for online gameplay here
-    if (playerXTurn) {
-        button.setIcon(new ImageIcon(Player1Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
-        // Send move to server or opponent
-    } else {
-        button.setIcon(new ImageIcon(Player2Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
-        // Handle move received from server or opponent
+        playerXTurn = !playerXTurn;
     }
 
-    playerXTurn = !playerXTurn;
-}
+    public int[][] dir = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+
+    public boolean checkWin() {
+        int len = 5;
+        for (int i = 0; i < buttons.length; i++) {
+            for (int j = 0; j < buttons[i].length; j++) {
+                if (buttons[i][j].getText().equals("")) {
+                    continue;
+                }
+                for (int k = 0; k < dir.length; k++) {
+                    int x = i;
+                    int y = j;
+                    int count = 0;
+                    while (x >= 0 && x < buttons.length && y >= 0 && y < buttons[x].length &&
+                        buttons[x][y].getText().equals(buttons[i][j].getText())) {
+                        count++;
+                        x += dir[k][0];
+                        y += dir[k][1];
+                    }
+                    if (count == len) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean checkTie() {
+        for (int i = 0; i < buttons.length; i++) {
+            for (int j = 0; j < buttons[i].length; j++) {
+                if (buttons[i][j].getText().equals("")) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public void resetGame() {
+        for (int i = 0; i < buttons.length; i++) {
+            for (int j = 0; j < buttons[i].length; j++) {
+                buttons[i][j].setText("");
+                buttons[i][j].setIcon(null);
+            }
+        }
+        playerXTurn = true;
+        winner = null;
+        count = 0;
+    }
+
+    public void printBoard() {
+        for (int i = 0; i < buttons.length; i++) {
+            for (int j = 0; j < buttons[i].length; j++) {
+                System.out.print(buttons[i][j].getText() + " ");
+            }
+            System.out.println();
+        }
+    }
+
+    public void setGameMode(GameMode gameMode) {
+        this.currentGameMode = gameMode;
+    }
+
+    public void saveGame() {
+        // use time stamp to save the game
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        File dir = new File("saved");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        String fileName = "saved/goMokuGame_" + timeStamp + ".txt";
+        try (FileWriter writer = new FileWriter(fileName)) {
+            for (int i = 0; i < buttons.length; i++) {
+                for (int j = 0; j < buttons[i].length; j++) {
+                    if (buttons[i][j].getText().equals("")) {
+                        writer.write("- ");
+                    } else {
+                    writer.write(buttons[i][j].getText() + " ");
+                    }
+                }
+                writer.write("\n");
+            }
+            writer.write("Current turn: " + (playerXTurn ? Player1 : Player2) + "\n");
+            writer.write("Winner: " + (winner != null ? winner : "None") + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Stack<int[]> temp = new Stack<>();
+        temp.addAll(moves);
+        Stack<int[]> reversedMoves = new Stack<>();
+        while (!temp.isEmpty()) {
+            reversedMoves.push(temp.pop());
+        }
+        while (!reversedMoves.isEmpty()) {
+            int[] move = reversedMoves.pop();
+            try (FileWriter writer = new FileWriter(fileName, true)) {
+            writer.write((playerXTurn ? Player2 : Player1) + ": " + Arrays.toString(move) + "\n");
+            } catch (IOException e) {
+            e.printStackTrace();
+            }
+            playerXTurn = !playerXTurn;
+        }
+        
+        
+    }
+
+
+    public void undoGame() {
+        // undo the last move
+        // undo me and enemy move at the same time
+
+        if (moves.isEmpty()) {
+            return;
+        }
+
+        int[] lastMove = moves.pop();
+        buttons[lastMove[0]][lastMove[1]].setText("");
+        buttons[lastMove[0]][lastMove[1]].setIcon(null);
+
+        if (currentGameMode == GameMode.LOCAL_PVE) {
+            int[] lastMove2 = moves.pop();
+            buttons[lastMove2[0]][lastMove2[1]].setText("");
+            buttons[lastMove2[0]][lastMove2[1]].setIcon(null);
+        }
+
+        playerXTurn = !playerXTurn;
+        winner = null;
+    }
 
 
 

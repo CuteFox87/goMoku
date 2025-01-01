@@ -1,29 +1,49 @@
 package Client;
 
 import javax.swing.*;
+import javax.sound.sampled.*;
+import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
 
 public class GameListener extends MouseAdapter implements ActionListener {
     
     public GameUI gameUI;
     public JTextField nameIn;
-    public ClientGameHandle clientGameHandle;
     int x, y;
     int gameStatus = 0;
 
     @Override
     public void actionPerformed(ActionEvent e) {
         String action = e.getActionCommand();
+
+        playding(); 
+        
         switch (action) {
             case "login" -> handleLogin();
             case "Logout" -> handleLogout();
             case "Local PVP" -> startLocalPVP();
             case "Local PVE" -> startLocalPVE();
             case "Online PVP" -> startOnlinePVP();
-            case "Undo" -> handleUndo();
+            case "Undo" -> gameUI.game.undoGame();
+            case "Clear" -> gameUI.game.resetGame();
+            case "Save" -> gameUI.game.saveGame();
             case "Quit" -> handleQuit();
+        }
+    }
+
+    private void playding() {
+        try {
+            File sound = new File("src\\sound\\bellding-254774.wav");
+            AudioInputStream ais = AudioSystem.getAudioInputStream(sound);
+            Clip clip = AudioSystem.getClip();
+            clip.open(ais);
+            clip.start();
+
+            Thread.sleep(clip.getMicrosecondLength() / 100000);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -34,14 +54,14 @@ public class GameListener extends MouseAdapter implements ActionListener {
             JOptionPane.showMessageDialog(null, "Please enter your name");
             return;
         }
-        clientGameHandle.username = name;
+        gameUI.username = name;
         gameUI.initGameUI();
         gameUI.showGameUI();
         gameUI.hideLoginUI();
     }
 
     private void handleLogout() {
-        clientGameHandle.username = null;
+        gameUI.username = null;
         gameUI.showLoginUI();
         gameUI.hideGameUI();
     }
@@ -50,13 +70,13 @@ public class GameListener extends MouseAdapter implements ActionListener {
         if (gameStatus == 1) {
             return;
         }
-        gameUI.gameBoard.currentGameMode = GameMode.LOCAL_PVP;
-        gameUI.gameBoard.clearButtons();
+        gameUI.game.currentGameMode = GameMode.LOCAL_PVP;
+        gameUI.game.resetGame();
         hideGameModeButtons();
         showGameControlButtons();
-        clientGameHandle.Online = 0;
-        clientGameHandle.AImode = 0;
-        clientGameHandle.GameStart();
+        gameUI.Online = 0;
+        gameUI.AImode = 0;
+        gameUI.GameStart();
         gameStatus = 1;
     }
 
@@ -64,13 +84,13 @@ public class GameListener extends MouseAdapter implements ActionListener {
         if (gameStatus == 1) {
             return;
         }
-        gameUI.gameBoard.currentGameMode = GameMode.LOCAL_PVE;
-        gameUI.gameBoard.clearButtons();
+        gameUI.game.currentGameMode = GameMode.LOCAL_PVE;
+        gameUI.game.resetGame();
         hideGameModeButtons();
         showGameControlButtons();
-        clientGameHandle.Online = 0;
-        clientGameHandle.AImode = 1;
-        clientGameHandle.GameStart();
+        gameUI.Online = 0;
+        gameUI.AImode = 1;
+        gameUI.GameStart();
         gameStatus = 1;
     }
 
@@ -78,18 +98,14 @@ public class GameListener extends MouseAdapter implements ActionListener {
         if (gameStatus == 1) {
             return;
         }
-        gameUI.gameBoard.currentGameMode = GameMode.ONLINE_PVP;
-        gameUI.gameBoard.clearButtons();
+        gameUI.game.currentGameMode = GameMode.ONLINE_PVP;
+        gameUI.game.resetGame();
         hideGameModeButtons();
         showGameControlButtons();
-        clientGameHandle.Online = 1;
-        clientGameHandle.AImode = 0;
-        clientGameHandle.GameStart();
+        gameUI.Online = 1;
+        gameUI.AImode = 0;
+        gameUI.GameStart();
         gameStatus = 1;
-    }
-
-    private void handleUndo() {
-        // Undo last move
     }
 
     private void handleQuit() {
@@ -98,8 +114,8 @@ public class GameListener extends MouseAdapter implements ActionListener {
         gameStatus = 0;
         showGameModeButtons();
         hideGameControlButtons();
-        if (clientGameHandle.Online == 1) {
-            clientGameHandle.connect.close();
+        if (gameUI.Online == 1) {
+            gameUI.connect.close();
         }
     }
 

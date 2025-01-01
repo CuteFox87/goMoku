@@ -1,7 +1,11 @@
 package Client;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.util.ArrayList;
 
 public class GameUI {
@@ -11,13 +15,36 @@ public class GameUI {
 
     JFrame gameJF;
     JPanel gameBar;
-    goMokuIconPanel gameBoard;
-
-    ClientGameHandle clientGameHandle = new ClientGameHandle();
+    goMokuIconPanel game;
     GameListener gameListener;
+
+    public connectHandle connect;
+    public int Online;
+    public int AImode;
+    public String username;
 
     ArrayList<JButton> gameModeButtons = new ArrayList<>();
     ArrayList<JButton> gameControlButtons = new ArrayList<>();
+
+    public GameUI() {
+        Online = 0;
+        AImode = 0;
+
+        try {
+            File audioFile = new File(".\\src\\music\\Lucid Dreamer.wav");
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile);
+
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioStream);
+
+            clip.loop(Clip.LOOP_CONTINUOUSLY);
+
+            clip.start();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public void initLoginUI() {
 
@@ -42,7 +69,6 @@ public class GameUI {
         gameListener = new GameListener();
         gameListener.nameIn = nameIn;
         gameListener.gameUI = this;
-        gameListener.clientGameHandle = clientGameHandle;
         
         loginBar.add(nameInLa);
         loginBar.add(nameIn);
@@ -65,7 +91,7 @@ public class GameUI {
     public void initGameUI() {
         gameJF = new JFrame();
         gameBar = new JPanel();
-        gameBoard = new goMokuIconPanel();
+        game = new goMokuIconPanel();
 
         gameJF.setTitle("Go Moku Game");
         gameJF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -76,10 +102,10 @@ public class GameUI {
         gameBar.setPreferredSize(new Dimension(120, 0));
         gameBar.setBackground(Color.GRAY);
 
-        JLabel nameLa = new JLabel("Welcome " + clientGameHandle.username + "!");
+        JLabel nameLa = new JLabel("Welcome " + username + "!");
         gameBar.add(nameLa);
 
-        String[] strs = {"Local PVP", "Local PVE", "Online PVP", "Undo", "Quit"};
+        String[] strs = {"Local PVP", "Local PVE", "Online PVP", "Undo", "Clear", "Save", "Quit"};
 
         for (String str : strs) {
             JButton bt = new JButton(str);
@@ -93,7 +119,7 @@ public class GameUI {
             }
 
             // Store only game control buttons
-            if (str.equals("Undo") || str.equals("Quit")) {
+            if (str.equals("Undo") || str.equals("Clear") || str.equals("Save") || str.equals("Quit")) {
                 gameControlButtons.add(bt);
                 bt.setVisible(false);
             }
@@ -107,7 +133,7 @@ public class GameUI {
 
         gameBar.add(logout, BorderLayout.SOUTH);
 
-        gameJF.add(gameBoard, BorderLayout.CENTER);
+        gameJF.add(game, BorderLayout.CENTER);
         gameJF.add(gameBar, BorderLayout.EAST);
         
 
@@ -128,6 +154,22 @@ public class GameUI {
 
     public void hideGameUI() {
         gameJF.setVisible(false);
+    }
+
+    public void GameStart() {
+        if (Online == 0) {
+            if (AImode == 0) {
+                System.out.println("Local PVP");
+                game.currentGameMode = GameMode.LOCAL_PVP;
+            } else {
+                System.out.println("Local PVE");
+                game.currentGameMode = GameMode.LOCAL_PVE;
+            }
+        } else {
+            System.out.println("Online PVP");
+            connect = new connectHandle("localhost", 8888);
+        }
+
     }
 
     public static void main(String[] args) {

@@ -5,22 +5,25 @@ public class ClientGameHandle {
     public int Online;
     public int AImode;
     public connectHandle connect;
-    public GameHandle gameHandle;
+    goMokuIconPanel goMokuIconPanel;
+    
+    public ClientGameHandle(goMokuIconPanel goMokuIconPanel) {
+        this.goMokuIconPanel = goMokuIconPanel;
+    }
 
     public void GameStart() {
         if (Online == 0) {
             if (AImode == 0) {
                 System.out.println("Local PVP");
-                gameHandle = new GameHandle(GameMode.LOCAL_PVP);
+                goMokuIconPanel.setGameMode(GameMode.LOCAL_PVP);
             } else {
                 System.out.println("Local PVE");
-                gameHandle = new GameHandle(GameMode.LOCAL_PVE);
+                goMokuIconPanel.setGameMode(GameMode.LOCAL_PVE);
             }
         } else {
             System.out.println("Online PVP");
             connect = new connectHandle("localhost", 8888);
         }
-        gameHandle.resetGame();
 
     }
 }
