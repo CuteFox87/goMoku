@@ -142,6 +142,7 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
                 JOptionPane.showMessageDialog(this, "It's a tie!");
             }
 
+            checkSpecialPatterns();
             playerXTurn = !playerXTurn;
 
         } else {
@@ -155,6 +156,7 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
                 JOptionPane.showMessageDialog(this, "It's a tie!");
             }
 
+            checkSpecialPatterns();
             playerXTurn = !playerXTurn;
         }
     }
@@ -169,6 +171,8 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
         } else if (checkTie()) {
             JOptionPane.showMessageDialog(this, "It's a tie!");
         }else {
+
+            checkSpecialPatterns();
 
             ai = new Client.AIChess("2", "1");
 
@@ -203,6 +207,8 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
             } else if (checkTie()) {
                 JOptionPane.showMessageDialog(this, "It's a tie!");
             }
+
+            checkSpecialPatterns();
         
         }
         
@@ -259,6 +265,170 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
         }
         return true;
     }
+
+    public void checkSpecialPatterns() {
+
+        // Check for "活三" (Live Three)
+        if (checkLiveThree()) {
+            GameUI.textArea.append("Live Three detected!\n");
+            System.out.println("Live Three detected!");
+        }
+
+        // Check for "死四" (Dead Four)
+        if (checkDeadFour()) {
+            GameUI.textArea.append("Dead Four detected!\n");
+            System.out.println("Dead Four detected!");
+        }
+
+        // Check for "雙活三" (Double Live Three)
+        if (checkDoubleLiveThree()) {
+            GameUI.textArea.append("Double Live Three detected!\n");
+            System.out.println("Double Live Three detected!");
+        }
+
+        return;
+    }
+
+    private boolean checkLiveThree() {
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (buttons[i][j].getText().equals("")) {
+                    continue;
+                }
+                String player = buttons[i][j].getText();
+    
+                for (int[] direction : dir) {
+                    int count = 0;
+                    int x = i, y = j;
+    
+                    // Check forward
+                    while (x >= 0 && x < size && y >= 0 && y < size && buttons[x][y].getText().equals(player)) {
+                        count++;
+                        x += direction[0];
+                        y += direction[1];
+                    }
+    
+                    // Check backward
+                    x = i - direction[0];
+                    y = j - direction[1];
+                    while (x >= 0 && x < size && y >= 0 && y < size && buttons[x][y].getText().equals(player)) {
+                        count++;
+                        x -= direction[0];
+                        y -= direction[1];
+                    }
+    
+                    // Check open ends
+                    boolean openStart = i - direction[0] >= 0 && i - direction[0] < size &&
+                            j - direction[1] >= 0 && j - direction[1] < size &&
+                            buttons[i - direction[0]][j - direction[1]].getText().equals("");
+    
+                    boolean openEnd = x >= 0 && x < size && y >= 0 && y < size && buttons[x][y].getText().equals("");
+    
+                    if (count == 3 && openStart && openEnd) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+
+    private boolean checkDeadFour() {
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (buttons[i][j].getText().equals("")) {
+                    continue;
+                }
+                String player = buttons[i][j].getText();
+    
+                for (int[] direction : dir) {
+                    int count = 0;
+                    int x = i, y = j;
+    
+                    // Check forward
+                    while (x >= 0 && x < size && y >= 0 && y < size && buttons[x][y].getText().equals(player)) {
+                        count++;
+                        x += direction[0];
+                        y += direction[1];
+                    }
+    
+                    // Check backward
+                    x = i - direction[0];
+                    y = j - direction[1];
+                    while (x >= 0 && x < size && y >= 0 && y < size && buttons[x][y].getText().equals(player)) {
+                        count++;
+                        x -= direction[0];
+                        y -= direction[1];
+                    }
+    
+                    // Check one open end
+                    boolean openStart = i - direction[0] >= 0 && i - direction[0] < size &&
+                            j - direction[1] >= 0 && j - direction[1] < size &&
+                            buttons[i - direction[0]][j - direction[1]].getText().equals("");
+    
+                    boolean closedEnd = !(x >= 0 && x < size && y >= 0 && y < size && buttons[x][y].getText().equals(""));
+    
+                    if (count == 4 && (openStart || closedEnd)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+
+    private boolean checkDoubleLiveThree() {
+        int liveThreeCount = 0;
+    
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (!buttons[i][j].getText().equals("")) {
+                    continue;
+                }
+                String player = playerXTurn ? "X" : "O";
+    
+                for (int[] direction : dir) {
+                    int count = 0;
+                    int x = i, y = j;
+    
+                    // Check forward
+                    while (x >= 0 && x < size && y >= 0 && y < size && buttons[x][y].getText().equals(player)) {
+                        count++;
+                        x += direction[0];
+                        y += direction[1];
+                    }
+    
+                    // Check backward
+                    x = i - direction[0];
+                    y = j - direction[1];
+                    while (x >= 0 && x < size && y >= 0 && y < size && buttons[x][y].getText().equals(player)) {
+                        count++;
+                        x -= direction[0];
+                        y -= direction[1];
+                    }
+    
+                    // Check open ends
+                    boolean openStart = i - direction[0] >= 0 && i - direction[0] < size &&
+                            j - direction[1] >= 0 && j - direction[1] < size &&
+                            buttons[i - direction[0]][j - direction[1]].getText().equals("");
+    
+                    boolean openEnd = x >= 0 && x < size && y >= 0 && y < size && buttons[x][y].getText().equals("");
+    
+                    if (count == 3 && openStart && openEnd) {
+                        liveThreeCount++;
+                    }
+    
+                    if (liveThreeCount >= 2) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
 
     public void resetGame() {
         for (int i = 0; i < buttons.length; i++) {

@@ -17,12 +17,13 @@ public class GameUI {
     JPanel gameBar;
     goMokuIconPanel game;
     GameListener gameListener;
-
+    
     public connectHandle connect;
     public int Online;
     public int AImode;
     public String username;
-
+    public static JTextArea textArea = new JTextArea();
+    
     ArrayList<JButton> gameModeButtons = new ArrayList<>();
     ArrayList<JButton> gameControlButtons = new ArrayList<>();
 
@@ -102,6 +103,9 @@ public class GameUI {
         gameBar.setPreferredSize(new Dimension(120, 0));
         gameBar.setBackground(Color.GRAY);
 
+        textArea.setPreferredSize(new Dimension(100, 500));
+        textArea.setEditable(false);
+
         JLabel nameLa = new JLabel("Welcome " + username + "!");
         gameBar.add(nameLa);
 
@@ -132,6 +136,7 @@ public class GameUI {
         gameModeButtons.add(logout);
 
         gameBar.add(logout, BorderLayout.SOUTH);
+        gameBar.add(textArea, BorderLayout.SOUTH);
 
         gameJF.add(game, BorderLayout.CENTER);
         gameJF.add(gameBar, BorderLayout.EAST);
