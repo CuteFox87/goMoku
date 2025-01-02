@@ -12,7 +12,8 @@ public class ChessServer {
             serverSocket = new ServerSocket(8888);
             game = new Game();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error starting server: " + e.getMessage());
+            return;
         }
 
         System.out.println("Server started. Waiting for players...");
@@ -23,9 +24,11 @@ public class ChessServer {
                     Socket playerSocket = serverSocket.accept();
                     ClientHandler clientHandler = new ClientHandler(playerSocket, clients, game);
                     clients.add(clientHandler);
+
                     if (clients.size() == 1) {
                         game.setCurrentPlayer(clientHandler);
                     }
+
                     System.out.println("Player " + clients.size() + " connected.");
                     new Thread(clientHandler).start();
                 } else {
@@ -35,7 +38,7 @@ public class ChessServer {
                     tempSocket.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                System.err.println("Error accepting connection: " + e.getMessage());
             }
         }
     }
@@ -67,20 +70,16 @@ class Game {
             sender.sendMessage("TURN:END"); // Notify it's not their turn
             return;
         }
-    
+
         for (ClientHandler client : sender.getClients()) {
             if (client != sender) {
                 client.sendMessage("MOVE:" + move);
-                client.sendMessage("TURN:START");
-            } else {
-                sender.sendMessage("TURN:END");
             }
         }
-    
-        // Switch turn
+
+        // Switch turn after broadcasting the move
         switchTurn();
     }
-    
 }
 
 class ClientHandler implements Runnable {
@@ -107,7 +106,7 @@ class ClientHandler implements Runnable {
             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
             writer.println(message);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error sending message: " + e.getMessage());
         }
     }
 
@@ -116,20 +115,24 @@ class ClientHandler implements Runnable {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
             String message;
             while ((message = reader.readLine()) != null) {
+                System.out.println("Received from client: " + message);
+
                 if (message.startsWith("MOVE:")) {
                     if (game.isPlayerTurn(this)) {
                         String move = message.substring(5);
+                        System.out.println("Processing move: " + move);
                         game.broadcastMove(this, move);
-                        game.switchTurn();
                     } else {
                         sendMessage("TURN:END");
+                        System.out.println("Invalid move - not player's turn.");
                     }
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error handling client: " + e.getMessage());
         } finally {
             clients.remove(this);
+            System.out.println("Client disconnected.");
             if (clients.size() < 2) {
                 game.setCurrentPlayer(null);
             }
