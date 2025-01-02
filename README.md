@@ -6,7 +6,7 @@ GoMoku is a classic board game also known as Five in a Row. The objective of the
 
 - Local PVP
 - Local PVE (with AI)
-- ~~Online PVP~~
+- Online PVP
 
 ## Features
 
