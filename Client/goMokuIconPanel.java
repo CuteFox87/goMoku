@@ -28,6 +28,7 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
     private Image background;
     public GameMode currentGameMode;
     private Stack<int[]> moves = new Stack<>();
+    private connectHandle networkHandler;
     AIChess ai;
 
     public goMokuIconPanel() {
@@ -214,18 +215,103 @@ public class goMokuIconPanel extends JPanel implements ActionListener{
         
     }
 
+    public void setNetworkHandler(connectHandle handler) {
+        this.networkHandler = handler;
+    }
+
     private void handleOnlinePVP(JButton button) {
-        // Add networking logic for online gameplay here
-        if (playerXTurn) {
-            button.setIcon(new ImageIcon(Player1Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
-            // Send move to server or opponent
-        } else {
-            button.setIcon(new ImageIcon(Player2Icon.getImage().getScaledInstance(button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
-            // Handle move received from server or opponent
+        if (networkHandler == null) {
+            JOptionPane.showMessageDialog(this, "No network connection!");
+            return;
+        }
+    
+        // Prevent move if it's not the player's turn or if a move is already locked
+        if (!networkHandler.isPlayerTurn()) {
+            JOptionPane.showMessageDialog(this, "It's not your turn!");
+    
+            // Clear the button if clicked by mistake
+            if (button.getIcon() != null) {
+                button.setIcon(null);
+                button.setText(""); // Clear the text
+            }
+            return;
+        }
+    
+        if (networkHandler.isMoveLocked()) {
+            JOptionPane.showMessageDialog(this, "Wait for your move to be confirmed!");
+            return;
+        }
+    
+        // Process the move
+        for (int i = 0; i < buttons.length; i++) {
+            for (int j = 0; j < buttons[i].length; j++) {
+                if (button == buttons[i][j] && button.getIcon() == null) {
+                    button.setIcon(new ImageIcon(Player1Icon.getImage().getScaledInstance(
+                        button.getWidth() * 3 / 5, button.getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
+                    button.setText("X");
+    
+                    // Lock the move and send it to the server
+                    networkHandler.lockMove();
+                    networkHandler.sendMove(i, j);
+    
+                    // Check if the player wins
+                    if (checkWin()) {
+                        winner = Player1;
+                        JOptionPane.showMessageDialog(this, winner + " wins!");
+                        networkHandler.unlockMove(); // Unlock the move
+                        return;
+                    }
+    
+                    // Check if the game ends in a tie
+                    if (checkTie()) {
+                        JOptionPane.showMessageDialog(this, "It's a tie!");
+                        networkHandler.unlockMove(); // Unlock the move
+                        return;
+                    }
+    
+                    // Check for special patterns (like Live Three, Dead Four)
+                    checkSpecialPatterns();
+    
+                    return; // Break out after handling the move
+                }
+            }
+        }
+    }
+    
+    
+    public void processOpponentMove(String move) {
+        String[] parts = move.split(",");
+        int x = Integer.parseInt(parts[0]);
+        int y = Integer.parseInt(parts[1]);
+    
+        if (buttons[x][y].getIcon() == null) {
+            buttons[x][y].setIcon(new ImageIcon(Player2Icon.getImage().getScaledInstance(
+                buttons[x][y].getWidth() * 3 / 5, buttons[x][y].getHeight() * 3 / 5, Image.SCALE_SMOOTH)));
+            buttons[x][y].setText("O"); // Optional, for debugging or logic
         }
 
-        playerXTurn = !playerXTurn;
+        // Check if the opponent wins
+        if (checkWin()) {
+            winner = Player2;
+            JOptionPane.showMessageDialog(this, winner + " wins!");
+            networkHandler.unlockMove(); // Ensure move lock is released
+            return;
+        }
+
+        // Check if the game ends in a tie
+        if (checkTie()) {
+            JOptionPane.showMessageDialog(this, "It's a tie!");
+            networkHandler.unlockMove(); // Ensure move lock is released
+            return;
+        }
+
+        // Check for special patterns (if needed)
+        checkSpecialPatterns();
+    
+        playerXTurn = true;
     }
+    
+    
 
     public int[][] dir = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 

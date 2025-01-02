@@ -1,49 +1,90 @@
 package Client;
 
-import java.net.*;
 import java.io.*;
+import java.net.*;
 
 public class connectHandle {
-    public static Socket clientSocket;
-    String latestMES = null;
+    public interface MessageListener {
+        void onTurnUpdate(boolean isPlayerTurn);
+        void onMoveReceived(String move);
+    }
 
-    connectHandle(String host, int port){
-        System.out.println("Connecting to server...");
+    private Socket clientSocket;
+    private PrintWriter out;
+    private MessageListener listener;
+    private boolean isPlayerTurn;
+
+    public connectHandle(String host, int port) {
         try {
             clientSocket = new Socket(host, port);
-            System.out.println("Connected to server.");
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+
+            new Thread(() -> {
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+                    String response;
+                    while ((response = in.readLine()) != null) {
+                        if (response.startsWith("TURN:")) {
+                            isPlayerTurn = response.equals("TURN:START");
+                            if (listener != null) {
+                                listener.onTurnUpdate(isPlayerTurn);
+                            }
+            
+                            // Unlock move if it's the player's turn again
+                            if (isPlayerTurn) {
+                                unlockMove();
+                            }
+                        } else if (response.startsWith("MOVE:")) {
+                            if (listener != null) {
+                                listener.onMoveReceived(response.substring(5));
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+            
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
-        new Thread(() -> {
-            try {
-                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                String response;
-                while ((response = in.readLine()) != null) {
-                    System.out.println(response);
-                    latestMES = response;
-                }
-            } catch (IOException ex) {
-                System.out.println("Error receiving data from server: " + ex.getMessage());
-            }
-        
-        }).start();
+    private boolean moveLocked = false;
 
+    public boolean isMoveLocked() {
+        return moveLocked;
+    }
+
+    public void lockMove() {
+        moveLocked = true;
+    }
+
+    public void unlockMove() {
+        moveLocked = false;
+    }
+
+
+    public boolean isPlayerTurn() {
+        return isPlayerTurn;
+    }
+
+    public void sendMove(int x, int y) {
+        if (out != null) {
+            out.println("MOVE:" + x + "," + y);
+        }
+    }
+
+    public void setMessageListener(MessageListener listener) {
+        this.listener = listener;
     }
 
     public void close() {
         try {
-            if (clientSocket != null && !clientSocket.isClosed()) {
+            if (clientSocket != null) {
                 clientSocket.close();
             }
-        } catch (IOException ex) {
-            System.err.println("Error closing connection: " + ex.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-    }
-
-
-    public static void main(String[] args) {
-        new connectHandle("localhost", 8888);
     }
 }

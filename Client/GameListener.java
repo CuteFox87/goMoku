@@ -5,7 +5,7 @@ import javax.sound.sampled.*;
 import java.io.*;
 import java.awt.event.*;
 
-public class GameListener extends MouseAdapter implements ActionListener {
+public class GameListener extends MouseAdapter implements ActionListener, connectHandle.MessageListener {
     
     public GameUI gameUI;
     public JTextField nameIn;
@@ -65,6 +65,34 @@ public class GameListener extends MouseAdapter implements ActionListener {
         gameUI.hideGameUI();
     }
 
+    private connectHandle networkHandler;
+
+    private void startOnlinePVP() {
+        gameUI.game.currentGameMode = GameMode.ONLINE_PVP;
+        gameUI.game.resetGame();
+
+        hideGameModeButtons();
+        showGameControlButtons();
+
+        networkHandler = new connectHandle("localhost", 8888);
+        networkHandler.setMessageListener(this);
+        gameUI.game.setNetworkHandler(networkHandler);
+    }
+
+    @Override
+    public void onTurnUpdate(boolean isPlayerTurn) {
+        if (isPlayerTurn) {
+            // JOptionPane.showMessageDialog(null, "Your turn!");
+        } else {
+            // JOptionPane.showMessageDialog(null, "Waiting for opponent...");
+        }
+    }
+
+    @Override
+    public void onMoveReceived(String move) {
+        gameUI.game.processOpponentMove(move);
+    }
+
     private void startLocalPVP() {
         if (gameStatus == 1) {
             return;
@@ -89,20 +117,6 @@ public class GameListener extends MouseAdapter implements ActionListener {
         showGameControlButtons();
         gameUI.Online = 0;
         gameUI.AImode = 1;
-        gameUI.GameStart();
-        gameStatus = 1;
-    }
-
-    private void startOnlinePVP() {
-        if (gameStatus == 1) {
-            return;
-        }
-        gameUI.game.currentGameMode = GameMode.ONLINE_PVP;
-        gameUI.game.resetGame();
-        hideGameModeButtons();
-        showGameControlButtons();
-        gameUI.Online = 1;
-        gameUI.AImode = 0;
         gameUI.GameStart();
         gameStatus = 1;
     }

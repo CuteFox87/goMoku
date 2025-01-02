@@ -1,112 +1,138 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
-//import org.json.*; 
 
 public class ChessServer {
-	private static ServerSocket serverSocket;
-    private static final List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());    
+    private static ServerSocket serverSocket;
+    private static final List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
+    private static Game game;
 
     public static void main(String[] args) {
         try {
             serverSocket = new ServerSocket(8888);
-        }
-        catch (IOException e) {
+            game = new Game();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
         System.out.println("Server started. Waiting for players...");
 
         while (true) {
-
-            if (clients.size() > 1) {
-                try {
-                    Socket player = serverSocket.accept();
-                    PrintWriter writer = new PrintWriter(player.getOutputStream(), true);
-                    writer.println("Server is full. Please try again later.");
-                    player.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                continue;
-            }
-
             try {
-                if ( clients.size() == 0 ) {
-                    Socket player1 = serverSocket.accept();
-                    ClientHandler clientHandler1 = new ClientHandler(player1, clients);
-                    clients.add(clientHandler1);
-                    int hash1 = clientHandler1.hashCode();
-                    System.out.println("Player " + clients.size() +" connected. (" + hash1 + ")");
-                    new Thread(clientHandler1).start();
+                if (clients.size() < 2) {
+                    Socket playerSocket = serverSocket.accept();
+                    ClientHandler clientHandler = new ClientHandler(playerSocket, clients, game);
+                    clients.add(clientHandler);
+                    if (clients.size() == 1) {
+                        game.setCurrentPlayer(clientHandler);
+                    }
+                    System.out.println("Player " + clients.size() + " connected.");
+                    new Thread(clientHandler).start();
+                } else {
+                    Socket tempSocket = serverSocket.accept();
+                    PrintWriter writer = new PrintWriter(tempSocket.getOutputStream(), true);
+                    writer.println("Server is full. Please try again later.");
+                    tempSocket.close();
                 }
-                else {
-                    Socket player2 = serverSocket.accept();
-                    ClientHandler clientHandler2 = new ClientHandler(player2, clients);
-                    clients.add(clientHandler2);
-                    int hash2 = clientHandler2.hashCode();
-                    System.out.println("Player " + clients.size() +" connected. (" + hash2 + ")");
-                    new Thread(clientHandler2).start();
-                }
-
             } catch (IOException e) {
-                System.out.println("Error accepting player connection.");
                 e.printStackTrace();
             }
         }
     }
 }
 
-class ClientHandler implements Runnable {
-    private Socket clientSocket;
-    private final List<ClientHandler> clients;
+class Game {
+    private ClientHandler currentPlayer;
+
+    public synchronized void setCurrentPlayer(ClientHandler client) {
+        currentPlayer = client;
+        if (currentPlayer != null) {
+            currentPlayer.sendMessage("TURN:START");
+        }
+    }
+
+    public synchronized boolean isPlayerTurn(ClientHandler client) {
+        return currentPlayer == client;
+    }
+
+    public synchronized void switchTurn() {
+        currentPlayer = currentPlayer == null ? null : currentPlayer.getOpponent();
+        if (currentPlayer != null) {
+            currentPlayer.sendMessage("TURN:START");
+        }
+    }
+
+    public synchronized void broadcastMove(ClientHandler sender, String move) {
+        if (currentPlayer != sender) {
+            sender.sendMessage("TURN:END"); // Notify it's not their turn
+            return;
+        }
     
-    public ClientHandler(Socket socket, List<ClientHandler> clients) {
+        for (ClientHandler client : sender.getClients()) {
+            if (client != sender) {
+                client.sendMessage("MOVE:" + move);
+                client.sendMessage("TURN:START");
+            } else {
+                sender.sendMessage("TURN:END");
+            }
+        }
+    
+        // Switch turn
+        switchTurn();
+    }
+    
+}
+
+class ClientHandler implements Runnable {
+    private final Socket clientSocket;
+    private final List<ClientHandler> clients;
+    private final Game game;
+
+    public ClientHandler(Socket socket, List<ClientHandler> clients, Game game) {
         this.clientSocket = socket;
         this.clients = clients;
+        this.game = game;
+    }
+
+    public List<ClientHandler> getClients() {
+        return clients;
+    }
+
+    public ClientHandler getOpponent() {
+        return clients.stream().filter(client -> client != this).findFirst().orElse(null);
+    }
+
+    public void sendMessage(String message) {
+        try {
+            PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
+            writer.println(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void run() {
-        try {
-            InputStream in = clientSocket.getInputStream();
-            // OutputStream out = clientSocket.getOutputStream();
-            int data;
-            StringBuilder messageBuffer = new StringBuilder();
-
-            while ((data = in.read()) != -1) {
-                if (data == '\n') { 
-                    String message = messageBuffer.toString();
-                    messageBuffer.setLength(0);
-                    System.out.println(this.hashCode() + ": " + message);
-
-                    synchronized (clients) {
-                        for (ClientHandler client : clients) {
-                            if (client == this) {
-                                continue;
-                            }
-                            System.out.print("Send to " + client.hashCode() + ": " + message + "\n");
-                            PrintWriter writer = new PrintWriter(client.clientSocket.getOutputStream(), true);
-                            writer.println(message);
-                        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+            String message;
+            while ((message = reader.readLine()) != null) {
+                if (message.startsWith("MOVE:")) {
+                    if (game.isPlayerTurn(this)) {
+                        String move = message.substring(5);
+                        game.broadcastMove(this, move);
+                        game.switchTurn();
+                    } else {
+                        sendMessage("TURN:END");
                     }
-                } else {
-                    messageBuffer.append((char) data);
                 }
             }
-
-            System.out.println("Client disconnected.");
-            clients.remove(this);
-            clients.forEach(client -> System.out.println(client.hashCode() + " is still connected."));
         } catch (IOException e) {
-            System.out.println("Error handling client.");
-            clients.remove(this);
             e.printStackTrace();
+        } finally {
+            clients.remove(this);
+            if (clients.size() < 2) {
+                game.setCurrentPlayer(null);
+            }
         }
     }
-}
-
-
-class GameHandler {
-    
 }
